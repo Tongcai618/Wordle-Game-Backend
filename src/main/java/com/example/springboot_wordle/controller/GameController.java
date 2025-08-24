@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/wordle")
+@RequestMapping("/api/wordle/games")
 public class GameController {
 
     @Autowired

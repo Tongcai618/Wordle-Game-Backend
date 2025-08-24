@@ -25,6 +25,7 @@ public class AuthService {
 
     public AuthResponse signup(SignupRequest req) {
         String email = req.email().trim().toLowerCase();
+        String username = req.username();
 
         if (userRepository.existsByEmail(email)) {
             throw new IllegalArgumentException("Email already registered");
@@ -33,6 +34,7 @@ public class AuthService {
         String hash = passwordEncoder.encode(req.password());
         User user = User.builder()
                 .email(email)
+                .username(username)
                 .passwordHash(hash)
                 .build();
         userRepository.save(user);
