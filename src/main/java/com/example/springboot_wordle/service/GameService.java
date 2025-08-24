@@ -4,10 +4,10 @@ package com.example.springboot_wordle.service;
 import com.example.springboot_wordle.dto.GuessOutcome;
 import com.example.springboot_wordle.model.Color;
 import com.example.springboot_wordle.model.Game;
+import com.example.springboot_wordle.repository.GameRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClient;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -17,29 +17,36 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class GameService {
 
+    private final GameRepository gameRepository;
     private List<String> wordList;
     private final Map<String, Game> games = new ConcurrentHashMap<>();
 
-    public GameService(ObjectMapper objectMapper) {
+    public GameService(ObjectMapper objectMapper, GameRepository gameRepository) {
         this.wordList = loadWordList(objectMapper);
+        this.gameRepository = gameRepository;
     }
 
-    public String CreateGame() {
+    public String CreateGame(String ownerEmail) {
         String gameId = UUID.randomUUID().toString();
         String solution = generateWordleWord();
-        Game game = Game.builder().solution(solution).id(gameId).build();
+        Game game = Game.builder().solution(solution).id(gameId).ownerEmail(ownerEmail).build();
         games.put(gameId, game);
         System.out.println("Created game with the solution " + solution);
         return gameId;
     }
 
     // Submit a guess and get the Guess Outcome from it
-    public GuessOutcome submitGuess(String gameId, String rawGuess) {
+    public GuessOutcome submitGuess(String ownerEmail, String gameId, String rawGuess) {
         // Get the game by game id
         Game game = games.get(gameId);
 
         // Game cannot be null
         if (game == null) throw new NoSuchElementException("Game not found: " + gameId);
+
+        // 🔒 Ownership check
+        if (!game.getOwnerEmail().equalsIgnoreCase(ownerEmail)) {
+            throw new IllegalArgumentException("You do not own this game.");
+        }
 
         String guess = Objects.requireNonNull(rawGuess).trim().toUpperCase();
         // Guess cannot include numbers or the length is not 5
@@ -57,7 +64,15 @@ public class GameService {
 
         // produce feedback with your judge function (two-pass: greens then yellows)
         List<Color> feedback = judge(gameId, guess);
-        return game.addGuessResult(guess, feedback);
+
+        GuessOutcome guessOutcome = game.addGuessResult(guess, feedback);
+
+        if (guessOutcome.correct()) {
+            // delete the additional tries
+            gameRepository.save(game);
+        }
+
+        return guessOutcome;
     }
 
     private List<Color> judge(String gameId, String rawGuess) {

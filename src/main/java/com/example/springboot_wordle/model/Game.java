@@ -15,6 +15,7 @@ import java.util.List;
 @Builder
 public class Game {
     private String id;
+    private String ownerEmail;
     private String solution;
     private final int maxTries = 6;
     private int tries = 0;
