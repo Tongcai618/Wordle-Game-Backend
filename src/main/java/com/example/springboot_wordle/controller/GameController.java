@@ -1,16 +1,12 @@
 package com.example.springboot_wordle.controller;
 
 import com.example.springboot_wordle.dto.GuessOutcome;
-import com.example.springboot_wordle.model.Color;
+import com.example.springboot_wordle.model.Game;
 import com.example.springboot_wordle.service.GameService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -21,18 +17,31 @@ public class GameController {
     private GameService gameService;
 
     public GameController(GameService gameService) {
-
         this.gameService = gameService;
     }
 
-    @GetMapping("/new")
+    @PostMapping("/new")
     public Map<String, String> newGame(Authentication authentication) {
         String email = authentication.getName(); // comes from JWT subject
-        String gameId = gameService.CreateGame(email);
+        String gameId = gameService.createGame(email);
         return Map.of("gameId", gameId);
     }
 
-    @GetMapping("/guess")
+    @PostMapping("/refresh")
+    public Map<String, String> refreshGame(Authentication authentication) {
+        String email = authentication.getName();
+        String gameId = gameService.refreshGame(email);
+        return Map.of("gameId", gameId);
+    }
+
+    @GetMapping("/load")
+    public Map<String, Game> loadGame(Authentication authentication,
+                                      @RequestParam("id") String id) {
+        String email = authentication.getName();
+        return Map.of("game", gameService.loadGame(id, email));
+    }
+
+    @PostMapping("/guess")
     public Map<String, GuessOutcome> guess(
             @RequestParam("id") String id,
             @RequestParam("guess") String guess,

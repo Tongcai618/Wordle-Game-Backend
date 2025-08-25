@@ -1,6 +1,7 @@
 package com.example.springboot_wordle.dto;
 
 import com.example.springboot_wordle.model.Color;
+import com.example.springboot_wordle.model.GuessResult;
 
 import java.util.List;
 
@@ -12,6 +13,7 @@ public record GuessOutcome(
         boolean correct,
         int tries,
         int maxTries,
-        boolean finished
+        boolean finished,
+        List<GuessResult> history
 ) {
 }

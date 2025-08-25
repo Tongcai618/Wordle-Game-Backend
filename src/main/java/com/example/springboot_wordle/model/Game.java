@@ -21,12 +21,16 @@ public class Game {
     private int tries = 0;
     private boolean finished = false;
     private boolean won = false;
-    private final List<GuessResult> history = new ArrayList<>();
+    private List<GuessResult> history = new ArrayList<>();
 
 
-    public synchronized GuessOutcome addGuessResult(String rawGuess, List<Color> feedback) {
+    public GuessOutcome addGuessResult(String rawGuess, List<Color> feedback) {
+        if (history == null) {
+            history = new ArrayList<>();
+        }
         String guess = rawGuess.toUpperCase();
         boolean correct = feedback.stream().allMatch(c -> c == Color.GREEN);
+        history.add(new GuessResult(guess, feedback));
         tries ++;
 
         // Set the edge condition
@@ -35,7 +39,7 @@ public class Game {
             won = correct;
         }
 
-        return new GuessOutcome(id, guess, feedback, correct, tries, maxTries, finished);
+        return new GuessOutcome(id, guess, feedback, correct, tries, maxTries, finished, history);
     }
 }
 

@@ -7,43 +7,62 @@ import com.example.springboot_wordle.model.Game;
 import com.example.springboot_wordle.repository.GameRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Duration;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class GameService {
 
     private final GameRepository gameRepository;
     private List<String> wordList;
-    private final Map<String, Game> games = new ConcurrentHashMap<>();
+    private final RedisTemplate<String, Game> redisTemplate;
+    private static final Duration TTL = Duration.ofMinutes(30);
 
-    public GameService(ObjectMapper objectMapper, GameRepository gameRepository) {
+    public GameService(ObjectMapper objectMapper, GameRepository gameRepository, RedisTemplate<String, Game> redisTemplate) {
         this.wordList = loadWordList(objectMapper);
         this.gameRepository = gameRepository;
+        this.redisTemplate = redisTemplate;
     }
 
-    public String CreateGame(String ownerEmail) {
+    public String createGame(String ownerEmail) {
         String gameId = UUID.randomUUID().toString();
         String solution = generateWordleWord();
         Game game = Game.builder().solution(solution).id(gameId).ownerEmail(ownerEmail).build();
-        games.put(gameId, game);
+        redisTemplate.opsForValue().set(gameId, game, TTL);
         System.out.println("Created game with the solution " + solution);
         return gameId;
+    }
+
+    public String refreshGame(String ownerEmail) {
+        return createGame(ownerEmail);
+    }
+
+    public Game loadGame(String gameId, String ownerEmail) {
+        Game game = redisTemplate.opsForValue().get(gameId);
+        if (game == null) {
+            throw new NoSuchElementException("Game with id " + gameId + " not found");
+        }
+
+        if (!game.getOwnerEmail().equals(ownerEmail)) {
+            throw new IllegalArgumentException("Owner email does not match");
+        }
+        return game;
     }
 
     // Submit a guess and get the Guess Outcome from it
     public GuessOutcome submitGuess(String ownerEmail, String gameId, String rawGuess) {
         // Get the game by game id
-        Game game = games.get(gameId);
+        Game game = redisTemplate.opsForValue().get(gameId);
 
         // Game cannot be null
         if (game == null) throw new NoSuchElementException("Game not found: " + gameId);
 
-        // 🔒 Ownership check
+        // Ownership check
         if (!game.getOwnerEmail().equalsIgnoreCase(ownerEmail)) {
             throw new IllegalArgumentException("You do not own this game.");
         }
@@ -72,11 +91,14 @@ public class GameService {
             gameRepository.save(game);
         }
 
+        redisTemplate.opsForValue().set(gameId, game, TTL);
+
         return guessOutcome;
     }
 
+    // Return the feedback of each try
     private List<Color> judge(String gameId, String rawGuess) {
-        Game game = games.get(gameId);
+        Game game = redisTemplate.opsForValue().get(gameId);
         if (game == null) {
             throw new NoSuchElementException("Game not found: " + gameId);
         }
@@ -93,7 +115,7 @@ public class GameService {
 
         Color[] out = new Color[5];           // result
         char[] sol = solution.toCharArray();  // solution letters
-        char[] g   = guess.toCharArray();     // guess letters
+        char[] g = guess.toCharArray();     // guess letters
         boolean[] used = new boolean[5];      // which solution letters are consumed for YELLOW/GREEN
 
         // Pass 1: mark GREENS
@@ -121,7 +143,6 @@ public class GameService {
 
         return Arrays.asList(out); // List<Color> of size 5
     }
-
 
     // Load the word list from resources/WordList.json
     private List<String> loadWordList(ObjectMapper objectMapper) {
