@@ -88,12 +88,13 @@ public class GameService {
 
         if (guessOutcome.correct()) {
             // delete the additional tries
+            System.out.println("Game finished at: " + game.getFinishedAt());
             System.out.println("Correct guess: " + guessOutcome.toString());
             gameRepository.save(game);
         }
 
         redisTemplate.opsForValue().set(gameId, game, TTL);
-
+        System.out.println("Submitted game with the solution " + guessOutcome.toString());
         return guessOutcome;
     }
 

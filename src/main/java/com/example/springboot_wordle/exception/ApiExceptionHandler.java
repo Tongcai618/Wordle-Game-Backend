@@ -30,6 +30,16 @@ public class ApiExceptionHandler {
                 .body(errorBody(500, "Internal Server Error", ex.getMessage()));
     }
 
+    @RestControllerAdvice
+    public static class GlobalExceptionHandler {
+        @ExceptionHandler(Exception.class)
+        public ResponseEntity<String> handleAll(Exception e) {
+            e.printStackTrace();  // Logs full cause of 500
+            return ResponseEntity.status(500).body("Internal error: " + e.getMessage());
+        }
+    }
+
+
     private Map<String, Object> errorBody(int status, String error, String message) {
         return Map.of(
                 "timestamp", Instant.now().toString(),

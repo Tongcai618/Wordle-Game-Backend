@@ -1,11 +1,14 @@
 package com.example.springboot_wordle.model;
 
 import com.example.springboot_wordle.dto.GuessOutcome;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,6 +16,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@Document(collection = "games")
 public class Game {
     private String id;
     private String ownerEmail;
@@ -22,6 +26,8 @@ public class Game {
     private boolean finished = false;
     private boolean won = false;
     private List<GuessResult> history = new ArrayList<>();
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
+    private LocalDateTime finishedAt;
 
 
     public GuessOutcome addGuessResult(String rawGuess, List<Color> feedback) {
@@ -37,6 +43,7 @@ public class Game {
         if (correct || tries >= maxTries) {
             finished = true;
             won = correct;
+            finishedAt = LocalDateTime.now();
         }
 
         return new GuessOutcome(id, guess, feedback, correct, tries, maxTries, finished, history);
