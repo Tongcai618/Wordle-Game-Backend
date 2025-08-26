@@ -7,6 +7,6 @@ import java.util.List;
 import java.util.Optional;
 
 public interface GameRepository extends MongoRepository<Game, String> {
-    Optional<Game> findByIdAndOwnerEmail(String id, String ownerEmail);
-    Optional<List<Game>> findByOwnerEmail(String ownerEmail);
+    Game findByIdAndOwnerEmail(String id, String ownerEmail);
+    List<Game> findByOwnerEmail(String ownerEmail);
 }

@@ -9,6 +9,9 @@ import com.example.springboot_wordle.security.JwtUtil;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+
 @Service
 public class AuthService {
 
@@ -26,6 +29,7 @@ public class AuthService {
     public AuthResponse signup(SignupRequest req) {
         String email = req.email().trim().toLowerCase();
         String username = req.username();
+        Instant now = Instant.now();
 
         if (userRepository.existsByEmail(email)) {
             throw new IllegalArgumentException("Email already registered");
@@ -36,6 +40,7 @@ public class AuthService {
                 .email(email)
                 .username(username)
                 .passwordHash(hash)
+                .createdAt(now)
                 .build();
         userRepository.save(user);
 

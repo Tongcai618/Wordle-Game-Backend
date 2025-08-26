@@ -34,8 +34,9 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/wordle/**").permitAll()
-                        .anyRequest().permitAll()
+                        .requestMatchers("/api/wordle/**").authenticated()
+                        .requestMatchers("/api/users/me").authenticated()
+                        .anyRequest().authenticated()
                 )
                 .httpBasic(basic -> basic.disable())
                 .formLogin(form -> form.disable())

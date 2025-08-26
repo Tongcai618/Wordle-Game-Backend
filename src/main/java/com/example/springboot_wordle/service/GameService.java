@@ -88,6 +88,7 @@ public class GameService {
 
         if (guessOutcome.correct()) {
             // delete the additional tries
+            System.out.println("Correct guess: " + guessOutcome.toString());
             gameRepository.save(game);
         }
 

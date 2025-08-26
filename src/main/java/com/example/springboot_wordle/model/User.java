@@ -28,4 +28,6 @@ public class User {
 
     @CreatedDate
     private Instant createdAt;
+
+    private UserStats userStats;
 }
