@@ -6,10 +6,7 @@ import com.example.springboot_wordle.dto.LoginRequest;
 import com.example.springboot_wordle.dto.SignupRequest;
 import com.example.springboot_wordle.service.AuthService;
 import jakarta.validation.Valid;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -26,5 +23,10 @@ public class AuthController {
     @PostMapping("/login")
     public AuthResponse login(@Valid @RequestBody LoginRequest req) {
         return authService.login(req);
+    }
+
+    @GetMapping("/test")
+    public String test() {
+        return "test";
     }
 }
