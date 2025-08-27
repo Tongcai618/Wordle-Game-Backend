@@ -1,9 +1,11 @@
 package com.example.springboot_wordle.service;
 
 
+import com.example.springboot_wordle.dto.GameDTO;
 import com.example.springboot_wordle.dto.GuessOutcome;
 import com.example.springboot_wordle.model.Color;
 import com.example.springboot_wordle.model.Game;
+import com.example.springboot_wordle.model.GameLevel;
 import com.example.springboot_wordle.repository.GameRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -19,30 +21,38 @@ import java.util.*;
 public class GameService {
 
     private final GameRepository gameRepository;
-    private List<String> wordList;
+    private List<String> normalWordList;
+    private List<String> simpleWordList;
     private final RedisTemplate<String, Game> redisTemplate;
     private static final Duration TTL = Duration.ofMinutes(30);
 
+
     public GameService(ObjectMapper objectMapper, GameRepository gameRepository, RedisTemplate<String, Game> redisTemplate) {
-        this.wordList = loadWordList(objectMapper);
+        this.normalWordList = loadWordList(objectMapper, "WordList.json");
+        this.simpleWordList = loadWordList(objectMapper, "SimpleWordList.json");
         this.gameRepository = gameRepository;
         this.redisTemplate = redisTemplate;
     }
 
-    public String createGame(String ownerEmail) {
+    public String createGame(String ownerEmail, GameLevel gameLevel) {
         String gameId = UUID.randomUUID().toString();
-        String solution = generateWordleWord();
-        Game game = Game.builder().solution(solution).id(gameId).ownerEmail(ownerEmail).build();
+        String solution = generateWordleWord(gameLevel);
+        Game game = Game.builder()
+                .solution(solution)
+                .id(gameId)
+                .ownerEmail(ownerEmail)
+                .level(gameLevel)
+                .build();
         redisTemplate.opsForValue().set(gameId, game, TTL);
         System.out.println("Created game with the solution " + solution);
         return gameId;
     }
 
-    public String refreshGame(String ownerEmail) {
-        return createGame(ownerEmail);
+    public String refreshGame(String ownerEmail, GameLevel gameLevel) {
+        return createGame(ownerEmail, gameLevel);
     }
 
-    public Game loadGame(String gameId, String ownerEmail) {
+    public GameDTO loadGame(String gameId, String ownerEmail) {
         Game game = redisTemplate.opsForValue().get(gameId);
         if (game == null) {
             throw new NoSuchElementException("Game with id " + gameId + " not found");
@@ -51,7 +61,7 @@ public class GameService {
         if (!game.getOwnerEmail().equals(ownerEmail)) {
             throw new IllegalArgumentException("Owner email does not match");
         }
-        return game;
+        return new GameDTO(game);
     }
 
     // Submit a guess and get the Guess Outcome from it
@@ -73,7 +83,7 @@ public class GameService {
             throw new IllegalArgumentException("Guess must be 5 letters A-Z");
         }
 
-        if (!wordList.contains(guess.toLowerCase())) {
+        if (!normalWordList.contains(guess.toLowerCase())) {
             throw new IllegalArgumentException("Guess is not a valid word");
         }
 
@@ -147,26 +157,30 @@ public class GameService {
     }
 
     // Load the word list from resources/WordList.json
-    private List<String> loadWordList(ObjectMapper objectMapper) {
-        try (InputStream is = getClass().getResourceAsStream("/WordList.json")) {
-
+    private List<String> loadWordList(ObjectMapper objectMapper, String fileName) {
+        try (InputStream is = getClass().getResourceAsStream("/" + fileName)) {
             if (is == null) {
-                throw new IllegalStateException("WordList.json not found on classpath (src/main/resources)");
+                throw new IllegalStateException(fileName + " not found in classpath (src/main/resources)");
             }
-            this.wordList = objectMapper.readValue(is, new TypeReference<List<String>>() {
-            });
 
-            if (wordList.isEmpty()) throw new IllegalStateException("Word list is empty after filtering");
+            List<String> wordList = objectMapper.readValue(is, new TypeReference<List<String>>() {});
+            if (wordList.isEmpty()) {
+                throw new IllegalStateException(fileName + " is empty");
+            }
+
+            return wordList;
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Failed to load " + fileName, e);
         }
-        return wordList;
     }
 
     // Generate a WordleWord
-    private String generateWordleWord() {
+    private String generateWordleWord(GameLevel gameLevel) {
         Random random = new Random();
-        return wordList.get(random.nextInt(wordList.size()));
+        if (gameLevel.equals(GameLevel.SIMPLE)) {
+            return simpleWordList.get(random.nextInt(simpleWordList.size()));
+        }
+        return normalWordList.get(random.nextInt(normalWordList.size()));
     }
 
 }

@@ -28,6 +28,7 @@ public class Game {
     private List<GuessResult> history = new ArrayList<>();
     @JsonFormat(shape = JsonFormat.Shape.STRING)
     private LocalDateTime finishedAt;
+    private GameLevel level;
 
 
     public GuessOutcome addGuessResult(String rawGuess, List<Color> feedback) {

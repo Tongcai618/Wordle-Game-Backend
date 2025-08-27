@@ -1,7 +1,9 @@
 package com.example.springboot_wordle.controller;
 
+import com.example.springboot_wordle.dto.GameDTO;
 import com.example.springboot_wordle.dto.GuessOutcome;
 import com.example.springboot_wordle.model.Game;
+import com.example.springboot_wordle.model.GameLevel;
 import com.example.springboot_wordle.service.GameService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -21,22 +23,24 @@ public class GameController {
     }
 
     @PostMapping("/new")
-    public Map<String, String> newGame(Authentication authentication) {
+    public Map<String, String> newGame(Authentication authentication,
+                                       @RequestParam("level") GameLevel gameLevel) {
         String email = authentication.getName(); // comes from JWT subject
-        String gameId = gameService.createGame(email);
+        String gameId = gameService.createGame(email, gameLevel);
         return Map.of("gameId", gameId);
     }
 
     @PostMapping("/refresh")
-    public Map<String, String> refreshGame(Authentication authentication) {
+    public Map<String, String> refreshGame(Authentication authentication,
+                                           @RequestParam("level") GameLevel gameLevel) {
         String email = authentication.getName();
-        String gameId = gameService.refreshGame(email);
+        String gameId = gameService.refreshGame(email, gameLevel);
         return Map.of("gameId", gameId);
     }
 
     @GetMapping("/load")
-    public Map<String, Game> loadGame(Authentication authentication,
-                                      @RequestParam("id") String id) {
+    public Map<String, GameDTO> loadGame(Authentication authentication,
+                                         @RequestParam("id") String id) {
         String email = authentication.getName();
         return Map.of("game", gameService.loadGame(id, email));
     }
