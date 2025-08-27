@@ -9,5 +9,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class UserStats {
-    long wins;
+    long simpleWins;
+    long normalWins;
+
 }

@@ -2,6 +2,7 @@ package com.example.springboot_wordle.service;
 
 import com.example.springboot_wordle.dto.GameDTO;
 import com.example.springboot_wordle.model.Game;
+import com.example.springboot_wordle.model.GameLevel;
 import com.example.springboot_wordle.model.User;
 import com.example.springboot_wordle.model.UserStats;
 import com.example.springboot_wordle.repository.GameRepository;
@@ -14,6 +15,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,14 +32,14 @@ public class UserService {
     public User getMyProfile(Authentication authentication) {
         String email = authentication.getName();
         // assuming `isWon()` getter
-        long wins = gameRepository.findByOwnerEmail(email).size();
-
+        long simpleWins = gameRepository.findByOwnerEmail(email).stream().filter(game -> GameLevel.SIMPLE.equals(game.getLevel())).count();
+        long normalWins = gameRepository.findByOwnerEmail(email).stream().filter(game -> GameLevel.NORMAL.equals(game.getLevel())).count();
         User user = userRepository.findByEmail(email).orElse(null);
         UserStats myUserStats = new UserStats();
-        myUserStats.setWins(wins);
+        myUserStats.setSimpleWins(simpleWins);
+        myUserStats.setNormalWins(normalWins);
 
         assert user != null;
-
         user.setUserStats(myUserStats);
         return user;
     }
