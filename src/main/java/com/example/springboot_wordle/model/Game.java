@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +28,7 @@ public class Game {
     private boolean won = false;
     private List<GuessResult> history = new ArrayList<>();
     @JsonFormat(shape = JsonFormat.Shape.STRING)
-    private LocalDateTime finishedAt;
+    private Instant finishedAt;
     private GameLevel level;
 
 
@@ -44,7 +45,7 @@ public class Game {
         if (correct || tries >= maxTries) {
             finished = true;
             won = correct;
-            finishedAt = LocalDateTime.now();
+            finishedAt = Instant.now();
         }
 
         return new GuessOutcome(id, guess, feedback, correct, tries, maxTries, finished, history);

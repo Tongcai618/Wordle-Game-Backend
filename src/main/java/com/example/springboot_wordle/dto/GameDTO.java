@@ -8,6 +8,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.Instant;
 import java.util.List;
 
 @Data
@@ -23,6 +24,7 @@ public class GameDTO {
     private boolean won;
     private GameLevel level;
     private List<GuessResult> history;
+    private Instant finishedAt;
 
     public GameDTO(Game game) {
         this.id = game.getId();
@@ -33,6 +35,7 @@ public class GameDTO {
         this.won = game.isWon();
         this.level = game.getLevel();
         this.history = game.getHistory();
+        this.finishedAt = game.getFinishedAt();
     }
 
 }

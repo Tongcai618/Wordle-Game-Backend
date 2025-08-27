@@ -4,6 +4,7 @@ package com.example.springboot_wordle.exception;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.Instant;
 import java.util.Map;
@@ -22,6 +23,14 @@ public class ApiExceptionHandler {
     public ResponseEntity<?> handleBadRequest(IllegalArgumentException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(errorBody(400, "Bad Request", ex.getMessage()));
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<String> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        String param = ex.getName();
+        String value = ex.getValue() != null ? ex.getValue().toString() : "null";
+        String message = String.format("Invalid value '%s' for parameter '%s'. Expected a number.", value, param);
+        return ResponseEntity.badRequest().body(message);
     }
 
     @ExceptionHandler(Exception.class)
