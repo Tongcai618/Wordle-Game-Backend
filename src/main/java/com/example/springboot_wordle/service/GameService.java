@@ -23,15 +23,17 @@ public class GameService {
     private final GameRepository gameRepository;
     private final List<String> normalWordList;
     private final List<String> simpleWordList;
-    private final RedisTemplate<String, Game> redisTemplate;
+    private final RedisTemplate<String, Game> gameRedisTemplate;
     private static final Duration TTL = Duration.ofMinutes(30);
+    private final LeaderboardService leaderboardService;
 
 
-    public GameService(ObjectMapper objectMapper, GameRepository gameRepository, RedisTemplate<String, Game> redisTemplate) {
+    public GameService(ObjectMapper objectMapper, GameRepository gameRepository, RedisTemplate<String, Game> redisTemplate, LeaderboardService leaderboardService) {
         this.normalWordList = loadWordList(objectMapper, "WordList.json");
         this.simpleWordList = loadWordList(objectMapper, "SimpleWordList.json");
         this.gameRepository = gameRepository;
-        this.redisTemplate = redisTemplate;
+        this.gameRedisTemplate = redisTemplate;
+        this.leaderboardService = leaderboardService;
     }
 
     public String createGame(String ownerEmail, GameLevel gameLevel) {
@@ -43,7 +45,7 @@ public class GameService {
                 .ownerEmail(ownerEmail)
                 .level(gameLevel)
                 .build();
-        redisTemplate.opsForValue().set(gameId, game, TTL);
+        gameRedisTemplate.opsForValue().set(gameId, game, TTL);
         System.out.println("Created game with the solution " + solution);
         return gameId;
     }
@@ -53,7 +55,7 @@ public class GameService {
     }
 
     public GameDTO loadGame(String gameId, String ownerEmail) {
-        Game game = redisTemplate.opsForValue().get(gameId);
+        Game game = gameRedisTemplate.opsForValue().get(gameId);
         if (game == null) {
             throw new NoSuchElementException("Game with id " + gameId + " not found");
         }
@@ -71,7 +73,7 @@ public class GameService {
      * @return The solution of game
      */
     public String getGameSolution(String gameId, String ownerEmail) {
-        Game game = redisTemplate.opsForValue().get(gameId);
+        Game game = gameRedisTemplate.opsForValue().get(gameId);
         if (game == null) {
             throw new NoSuchElementException("Game with id " + gameId + " not found");
         }
@@ -87,7 +89,7 @@ public class GameService {
     // Submit a guess and get the Guess Outcome from it
     public GuessOutcome submitGuess(String ownerEmail, String gameId, String rawGuess) {
         // Get the game by game id
-        Game game = redisTemplate.opsForValue().get(gameId);
+        Game game = gameRedisTemplate.opsForValue().get(gameId);
 
         // Game cannot be null
         if (game == null) throw new NoSuchElementException("Game not found: " + gameId);
@@ -121,16 +123,18 @@ public class GameService {
             System.out.println("Game finished at: " + game.getFinishedAt());
             System.out.println("Correct guess: " + guessOutcome.toString());
             gameRepository.save(game);
+            // Send the game to the leaderboard
+            leaderboardService.recordCompletion(game.getOwnerEmail());
         }
 
-        redisTemplate.opsForValue().set(gameId, game, TTL);
+        gameRedisTemplate.opsForValue().set(gameId, game, TTL);
         System.out.println("Submitted game with the solution " + guessOutcome.toString());
         return guessOutcome;
     }
 
     // Return the feedback of each try
     private List<Color> judge(String gameId, String rawGuess) {
-        Game game = redisTemplate.opsForValue().get(gameId);
+        Game game = gameRedisTemplate.opsForValue().get(gameId);
         if (game == null) {
             throw new NoSuchElementException("Game not found: " + gameId);
         }
