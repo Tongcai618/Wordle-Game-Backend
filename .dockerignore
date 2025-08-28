@@ -1,0 +1,19 @@
+# Ignore everything in target except for JAR files
+target/*
+!target/*.jar
+
+# Ignore common IDE/editor settings
+*.iml
+*.log
+*.class
+*.swp
+*~
+.idea/
+.vscode/
+.gradle/
+.git/
+.gitignore
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
