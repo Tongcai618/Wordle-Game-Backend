@@ -54,4 +54,13 @@ public class GameController {
 
         return Map.of("Result", gameService.submitGuess(email, id, guess));
     }
+
+    @GetMapping("/solution")
+    public Map<String, String> getGameSolution(Authentication authentication,
+                                               @RequestParam("id") String id) {
+        String email = authentication.getName();
+        String solution = gameService.getGameSolution(id, email);
+        System.out.println(solution);
+        return Map.of("solution", solution);
+    }
 }

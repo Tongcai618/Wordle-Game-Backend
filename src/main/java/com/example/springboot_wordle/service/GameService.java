@@ -64,6 +64,26 @@ public class GameService {
         return new GameDTO(game);
     }
 
+    /**
+     * Get the solution if the game is finished
+     * @param gameId The game id
+     * @param ownerEmail The onwer email
+     * @return The solution of game
+     */
+    public String getGameSolution(String gameId, String ownerEmail) {
+        Game game = redisTemplate.opsForValue().get(gameId);
+        if (game == null) {
+            throw new NoSuchElementException("Game with id " + gameId + " not found");
+        }
+        if (!game.getOwnerEmail().equals(ownerEmail)) {
+            throw new IllegalArgumentException("Owner email does not match");
+        }
+        if (!game.isFinished()) {
+            throw new IllegalArgumentException("Game is not finished");
+        }
+        return game.getSolution();
+    }
+
     // Submit a guess and get the Guess Outcome from it
     public GuessOutcome submitGuess(String ownerEmail, String gameId, String rawGuess) {
         // Get the game by game id
