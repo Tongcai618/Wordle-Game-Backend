@@ -21,8 +21,8 @@ import java.util.*;
 public class GameService {
 
     private final GameRepository gameRepository;
-    private List<String> normalWordList;
-    private List<String> simpleWordList;
+    private final List<String> normalWordList;
+    private final List<String> simpleWordList;
     private final RedisTemplate<String, Game> redisTemplate;
     private static final Duration TTL = Duration.ofMinutes(30);
 
