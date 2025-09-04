@@ -34,6 +34,9 @@ public class AuthService {
         if (userRepository.existsByEmail(email)) {
             throw new IllegalArgumentException("Email already registered");
         }
+        if (userRepository.existsByUsername(username)) {
+            throw new IllegalArgumentException("Username already registered");
+        }
 
         String hash = passwordEncoder.encode(req.password());
         User user = User.builder()
