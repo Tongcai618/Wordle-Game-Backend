@@ -1,6 +1,7 @@
 package com.example.springboot_wordle.service;
 
 import com.example.springboot_wordle.dto.GameDTO;
+import com.example.springboot_wordle.dto.UserDTO;
 import com.example.springboot_wordle.model.Game;
 import com.example.springboot_wordle.model.GameLevel;
 import com.example.springboot_wordle.model.User;
@@ -31,22 +32,66 @@ public class UserService {
 
     public User getMyProfile(Authentication authentication) {
         String email = authentication.getName();
-        // assuming `isWon()` getter
-        long simpleWins = gameRepository.findByOwnerEmail(email).stream().filter(game -> GameLevel.SIMPLE.equals(game.getLevel())).count();
-        long normalWins = gameRepository.findByOwnerEmail(email).stream().filter(game -> GameLevel.NORMAL.equals(game.getLevel())).count();
-        User user = userRepository.findByEmail(email).orElse(null);
+
+        // Count wins by level
+        long simpleWins = gameRepository.findByOwnerEmail(email).stream()
+                .filter(game -> GameLevel.SIMPLE.equals(game.getLevel()))
+                .count();
+
+        long normalWins = gameRepository.findByOwnerEmail(email).stream()
+                .filter(game -> GameLevel.NORMAL.equals(game.getLevel()))
+                .count();
+
+        // Get the user or throw if not found
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + email));
+
+        // Attach stats
         UserStats myUserStats = new UserStats();
         myUserStats.setSimpleWins(simpleWins);
         myUserStats.setNormalWins(normalWins);
 
-        assert user != null;
         user.setUserStats(myUserStats);
         return user;
     }
 
 
+    public UserDTO getUserByUsername(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
+
+        String email = user.getEmail();
+        long simpleWins = gameRepository.findByOwnerEmail(email).stream()
+                .filter(game -> GameLevel.SIMPLE.equals(game.getLevel()))
+                .count();
+        long normalWins = gameRepository.findByOwnerEmail(email).stream()
+                .filter(game -> GameLevel.NORMAL.equals(game.getLevel()))
+                .count();
+
+        UserStats otherUserStats = new UserStats();
+        otherUserStats.setSimpleWins(simpleWins);
+        otherUserStats.setNormalWins(normalWins);
+
+        user.setUserStats(otherUserStats);
+        return new UserDTO(user);
+    }
+
+
     public List<GameDTO> getGameActivity(Authentication authentication, int days) {
         String email = authentication.getName();
+
+        Instant cutoff = Instant.now().minus(days, ChronoUnit.DAYS);
+        List<Game> games = gameRepository.findByOwnerEmailAndFinishedAtAfter(email, cutoff);
+
+        // Convert game to gameDTOs and return
+        return games.stream().map(GameDTO::new).collect(Collectors.toList());
+    }
+
+
+    public List<GameDTO> getGameActivityUsername(String username, int days) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
+        String email = user.getEmail();
 
         Instant cutoff = Instant.now().minus(days, ChronoUnit.DAYS);
         List<Game> games = gameRepository.findByOwnerEmailAndFinishedAtAfter(email, cutoff);
