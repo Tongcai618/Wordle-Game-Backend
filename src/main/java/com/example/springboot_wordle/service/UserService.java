@@ -86,4 +86,17 @@ public class UserService {
         // Convert game to gameDTOs and return
         return games.stream().map(GameDTO::new).collect(Collectors.toList());
     }
+
+
+    public List<GameDTO> getGameActivityUsername(String username, int days) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
+        String email = user.getEmail();
+
+        Instant cutoff = Instant.now().minus(days, ChronoUnit.DAYS);
+        List<Game> games = gameRepository.findByOwnerEmailAndFinishedAtAfter(email, cutoff);
+
+        // Convert game to gameDTOs and return
+        return games.stream().map(GameDTO::new).collect(Collectors.toList());
+    }
 }

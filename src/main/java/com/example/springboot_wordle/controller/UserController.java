@@ -38,5 +38,11 @@ public class UserController {
         return userService.getUserByUsername(username);
     }
 
+    @GetMapping("/{username}/game-activities")
+    public List<GameDTO> getOtherGameActivity(@PathVariable String username,
+                                         @RequestParam(defaultValue = "7") int days) {
+        return userService.getGameActivityUsername(username, days);
+    }
+
 
 }
