@@ -51,7 +51,8 @@ public class SecurityConfig {
         config.setAllowedOrigins(List.of(
                 "http://localhost:5173", // For local testing
                 "https://wordle.tong-cai.com", // For my domain
-                "https://tongcai618.github.io" // GitHub Pages origin
+                "https://tongcai618.github.io", // GitHub Pages origin
+                "https://www.wordle-game.tong-cai.com" // For Frontend domain
         ));
         config.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS","PATCH"));
         config.setAllowedHeaders(List.of(
